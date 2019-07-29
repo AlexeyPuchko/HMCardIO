@@ -18,7 +18,7 @@
 #pragma mark - Colors
 
 #define kStandardMinimumBoundsWidth 300.0f
-#define kStandardLineWidth 12.0f
+#define kStandardLineWidth 4.0f
 #define kStandardCornerSize 50.0f
 #define kAdjustFudge 0.2f  // Because without this, we see a mini gap between edge path and corner path.
 
@@ -96,7 +96,7 @@ typedef enum {
     _bottomLeftLayer = [CAShapeLayer layer];
     _bottomRightLayer = [CAShapeLayer layer];
     
-    _fauxCardLayer.cornerRadius = 0.0f;
+    _fauxCardLayer.cornerRadius = 12.0f;
     _fauxCardLayer.masksToBounds = YES;
     _fauxCardLayer.borderWidth = 0.0f;
     
@@ -116,15 +116,15 @@ typedef enum {
     _backgroundOverlay.cornerRadius = 0.0f;
     _backgroundOverlay.masksToBounds = YES;
     _backgroundOverlay.borderWidth = 0.0f;
-    _backgroundOverlay.fillColor = [UIColor colorWithWhite:0.0f alpha:0.7f].CGColor;
+    _backgroundOverlay.fillColor = [UIColor colorWithWhite:0.0f alpha:0.77f].CGColor;
     [self addSublayer:_backgroundOverlay];
 
 #if CARDIO_DEBUG
     _debugOverlay = [CALayer layer];
-    _debugOverlay.cornerRadius = 0.0f;
+    _debugOverlay.cornerRadius = 12.0f;
     _debugOverlay.masksToBounds = YES;
     _debugOverlay.borderWidth = 0.0f;
-    [self addSublayer:_debugOverlay];
+//    [self addSublayer:_debugOverlay];
 #endif
     
     NSArray *edgeLayers = [NSArray arrayWithObjects:
@@ -171,31 +171,68 @@ typedef enum {
 #endif
   CGMutablePathRef path = CGPathCreateMutable();
   CGPoint pStart = point, 
-          pEnd = point;
+          pEnd = point,
+          pStartArc = point,
+          pEndArc = point,
+          center = point;
+  
+  CGFloat raduis = kDefaultGuideRadius,
+          startArc = 0,
+          endArc = 0;
+  
+  bool clockwise = true;
   
   // All this assumes phone is turned horizontally, to widescreen mode
   switch (posType) {
     case kTopLeft:
       pStart.x -= size;
       pEnd.y += size;
+      pStartArc.x -= raduis;
+      pEndArc.y += raduis;
+      startArc = 3 * M_PI_2;
+      endArc = 0;
+      center.x -= raduis;
+      center.y += raduis;
+      clockwise = false;
       break;
     case kTopRight:
       pStart.x -= size;
       pEnd.y -= size;
-      break;
-    case kBottomLeft:
-      pStart.x += size;
-      pEnd.y += size;
+      pStartArc.x -= raduis;
+      pEndArc.y -= raduis;
+      startArc = M_PI_2;
+      endArc = 0;
+      center.x -= raduis;
+      center.y -= raduis;
       break;
     case kBottomRight:
       pStart.x += size;
       pEnd.y -= size;
+      pStartArc.x += raduis;
+      pEndArc.y -= raduis;
+      startArc = M_PI_2;
+      endArc = M_PI;
+      center.x += raduis;
+      center.y -= raduis;
+      clockwise = false;
+      break;
+    case kBottomLeft:
+      pStart.x += size;
+      pEnd.y += size;
+      pStartArc.x += raduis;
+      pEndArc.y += raduis;
+      startArc = M_PI_2 * 3;
+      endArc = M_PI;
+      center.x += raduis;
+      center.y += raduis;
       break;
     default:
       break;
   }
   CGPathMoveToPoint(path, NULL, pStart.x, pStart.y);
-  CGPathAddLineToPoint(path, NULL, point.x, point.y);
+  CGPathAddLineToPoint(path, NULL, pStartArc.x, pStartArc.y);
+  CGPathAddArc(path, NULL, center.x, center.y, 12, startArc, endArc, clockwise);
+  CGPathAddLineToPoint(path, NULL, pEndArc.x, pEndArc.y);
   CGPathAddLineToPoint(path, NULL, pEnd.x, pEnd.y);
   return path;
 }
@@ -204,15 +241,19 @@ typedef enum {
 
   CGMutablePathRef path = CGPathCreateMutable();
 
+  CGPathRef innerPath = [UIBezierPath bezierPathWithRoundedRect:guideFrame cornerRadius:kDefaultGuideRadius].bezierPathByReversingPath.CGPath;
+  
   CGPathMoveToPoint(path, NULL, frame.origin.x, frame.origin.y);
   CGPathAddLineToPoint(path, NULL, frame.origin.x + frame.size.width, frame.origin.y);
   CGPathAddLineToPoint(path, NULL, frame.origin.x + frame.size.width, frame.origin.y + frame.size.height);
   CGPathAddLineToPoint(path, NULL, frame.origin.x, frame.origin.y + frame.size.height);
 
   CGPathMoveToPoint(path, NULL, guideFrame.origin.x, guideFrame.origin.y);
-  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x, guideFrame.origin.y + guideFrame.size.height);
-  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x + guideFrame.size.width, guideFrame.origin.y + guideFrame.size.height);
-  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x + guideFrame.size.width, guideFrame.origin.y);
+  CGPathAddPath(path, NULL, innerPath);
+  
+//  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x, guideFrame.origin.y + guideFrame.size.height);
+//  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x + guideFrame.size.width, guideFrame.origin.y + guideFrame.size.height);
+//  CGPathAddLineToPoint(path, NULL, guideFrame.origin.x + guideFrame.size.width, guideFrame.origin.y);
 
   return path;
 }
@@ -526,11 +567,6 @@ typedef enum {
 
 - (void)showCardFound:(BOOL)found {
   self.guidesLockedOn = found;
-  if (found) {
-    self.backgroundOverlay.fillColor = [UIColor colorWithWhite:0.0f alpha:0.8f].CGColor;
-  } else {
-    self.backgroundOverlay.fillColor = [UIColor colorWithWhite:0.0f alpha:0.0f].CGColor;
-  }
   [self updateStrokes];
 }
 

@@ -153,10 +153,10 @@
     
 #if CARDIO_DEBUG
 // This can be useful for debugging dynamic changes, such as brightness, torch setting, etc.
-//    _debugTextField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 300, 20)];
-//    _debugTextField.textColor = [UIColor greenColor];
-//    _debugTextField.font = [UIFont fontWithName:@"Helvetica-Bold" size:14.0f];
-//    _debugTextField.backgroundColor = [UIColor clearColor];
+    _debugTextField = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 300, 20)];
+    _debugTextField.textColor = [UIColor greenColor];
+    _debugTextField.font = [UIFont fontWithName:@"Helvetica-Bold" size:14.0f];
+    _debugTextField.backgroundColor = [UIColor clearColor];
 //    [self addSubview:_debugTextField];
 #endif
 

@@ -8,6 +8,7 @@
 #import <UIKit/UIKit.h>
 
 #define kDefaultGuideColor [UIColor colorWithRed:0.0f green:0.61f blue:0.84f alpha:1.0f]
+#define kDefaultGuideRadius 12.0f
 
 @protocol CardIOGuideLayerDelegate <NSObject>
 - (void)guideLayerDidLayout:(CGRect)internalGuideFrame;
